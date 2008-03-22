@@ -14,6 +14,10 @@ This plugin uses an adapted version of Neil Fraser's [[google-diff-match-patch|h
 {{{
 <<diff string1 string2>>
 }}}
+Evaluated parameters can be used to compare tiddlers:
+{{{
+<<diff {{store.getTiddlerText("tiddlerName1")}} {{store.getTiddlerText("tiddlerName2")}}>>
+}}}
 !!Examples
 <<diff "lorem ipsum dolor sit amet" "lorem ipsum sit dolor amet">>
 !Configuration Options
@@ -22,13 +26,15 @@ The styling can be adjusted by editing the [[StyleSheetDiff]] shadow tiddler.
 !!v0.1 (2008-03-22)
 * initial release
 !To Do
-* documentation
+* non-unified diff (optional)
+* parameters for {{{cleanupSemantic}}}, {{{cleanupEfficiency}}} and {{{displayEOL}}}
 !Code
 ***/
 //{{{
 config.macros.diff = {
 	cleanupSemantic: true,
-	cleanupEfficiency: true
+	cleanupEfficiency: true,
+	displayEOL: false
 };
 
 config.macros.diff.handler = function(place, macroName, params, wikifier, paramString, tiddler) {
@@ -43,6 +49,15 @@ config.macros.diff.handler = function(place, macroName, params, wikifier, paramS
 }
 
 config.shadowTiddlers.StyleSheetDiff = "/*{{{*/\n"
+	+ ".diffView {\n"
+	+ "\toverflow: auto;\n"
+	+ "\tmargin: 1em;\n"
+	+ "\tborder: 1px solid #888;\n"
+	+ "\tpadding: 5px;\n"
+	+ "\twhite-space: pre;\n"
+	+ "\tfont-family: monospace;\n"
+	+ "\tbackground-color: #fefefe;\n"
+	+ "}\n\n"
 	+ ".diffView ins {\n"
 	+ "\tbackground-color: #E6FFE6;\n"
 	+ "}\n\n"
@@ -1130,7 +1145,8 @@ diff_match_patch.prototype.diff_prettyHtml = function(diffs) {
     var t = diffs[x][1]; // Text of change.
     var i = diffs[x][2]; // Index of change.
     t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    t = t.replace(/\n/g, '&para;<br>');
+    if(config.macros.diff.displayEOL)
+		t = t.replace(/\n/g, '&para;\n');
     switch (m) {
     case DIFF_INSERT:
       html[x] = '<ins title="i=' + i + '">' +
