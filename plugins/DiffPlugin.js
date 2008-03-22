@@ -53,6 +53,12 @@ config.shadowTiddlers.StyleSheetDiff = "/*{{{*/\n"
 store.addNotification("StyleSheetDiff", refreshStyles);
 
 
+/*
+** reduced version of Neil Fraser's Neil Fraser's google-diff-match-patch library
+** (http://code.google.com/p/google-diff-match-patch/) 
+*/
+
+
 /**
  * Class containing the diff, match and patch methods.
  * @constructor
