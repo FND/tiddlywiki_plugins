@@ -52,7 +52,9 @@ function getPluginTiddlers($xml, $oldStoreFormat = false) {
 	$tiddlers = $xml->xpath($filter);
 	// DEBUG: also retrieve tiddler fields (DIV attributes)
 	foreach($tiddlers as $tiddler) {
-		processTiddler($tiddler);
+		$t = new stdClass; // DEBUG: correct?
+		$t->text = $tiddler;
+		processTiddler($t);
 	}
 }
 
@@ -61,6 +63,6 @@ function getPluginTiddlers($xml, $oldStoreFormat = false) {
 */
 
 function processTiddler($tiddler) {
-		echo $tiddler; // DEBUG
+		print_r($tiddler); // DEBUG
 }
 ?>
