@@ -9,8 +9,7 @@ echo "</pre>";
 */
 
 function processRepositories() {
-	//$repositories = array("http://www.tiddlywiki.com/coreplugins.html"); // DEBUG: to be read from database
-	$repositories = array("dummyStore.html"); // DEBUG
+	$repositories = array("dummyTiddlyWiki.html"/*, "http://www.tiddlywiki.com/coreplugins.html"*/); // DEBUG: to be read from database
 	foreach($repositories as $repo) {
 		$contents = file_get_contents($repo);
 		// DEBUG: error handling
@@ -25,7 +24,7 @@ function processRepositories() {
 
 function processTiddlyWiki($str) {
 	$str = str_replace("xmlns=", "ns=", $str); // workaround for default-namespace bug
-	$xml = new SimpleXMLElement($str);
+	$xml = new SimpleXMLElement($str); // DEBUG: errors for HTML entities (CDATA issue!?)
 	$version = getVersion($xml);
 	if(floatval($version[0] . "." . $version[1]) < 2.2)
 		getPluginTiddlers($xml, true);
