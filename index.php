@@ -53,7 +53,7 @@ function getPluginTiddlers($xml, $oldStoreFormat = false) {
 	// DEBUG: also retrieve tiddler fields (DIV attributes)
 	foreach($tiddlers as $tiddler) {
 		$t = new stdClass; // DEBUG: correct?
-		$t->text = $tiddler;
+		$t->text = $tiddler->asXML(); // asXML() conversion not required!?
 		processTiddler($t);
 	}
 }
