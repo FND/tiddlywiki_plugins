@@ -75,7 +75,7 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 					break;
 			}
 		}
-		// retrieve tiddler text
+		// retrieve tiddler text -- DEBUG: strip leading and trailing whitespace?
 		if(!$oldStoreFormat) // v2.2+
 			$t->text = strval($tiddler->pre);
 		else
@@ -88,6 +88,9 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 }
 
 function getSlices(&$tiddler) {
+	$pattern = "/(?:[\'\/]*~?([\.\w]+)[\'\/]*\:[\'\/]*\s*(.*?)\s*$)|(?:\|[\'\/]*~?([\.\w]+)\:?[\'\/]*\|\s*(.*?)\s*\|)/m"; // DEBUG: not working!?
+	preg_match_all($pattern, $tiddler->text, $matches);
+	print_r($matches); // DEBUG
 	// DEBUG: to do
 }
 
