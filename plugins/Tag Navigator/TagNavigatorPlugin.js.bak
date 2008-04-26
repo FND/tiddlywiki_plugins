@@ -1,0 +1,237 @@
+/***
+|Name|TagNavigatorPlugin (working title)|
+|Source|[[FND's DevPad|http://devpad.tiddlyspot.com/#TagNavigatorPlugin]]|
+|Version|0.1|
+|Author|FND|
+|License|[[Creative Commons Attribution-ShareAlike 2.5 License|http://creativecommons.org/licenses/by-sa/2.5/]]|
+|~CoreVersion|2.1|
+|Type|plugin|
+|Requires|N/A|
+|Overrides|N/A|
+|Description|provides a dynamically-created tag tree for navigation|
+!Usage
+!Changelog
+!!v0.1 (2007-06-04)
+* initial alpha version
+!Issues / To Do
+* many, many issues; cf. DEBUG markers in code
+!Code
+***/
+//{{{
+TagNav = {}; // TagNavigatorPlugin namespace
+
+// initialize
+TagNav.initialize = function() {
+	// create shadow tiddler for CSS rules
+	TagNav.addStyles("StyleSheetTagNavigator");
+	// get all tiddlers
+	TagNav.tiddlers = store.reverseLookup("tags", "", false, "title"); // DEBUG: dirty hack!?
+	// get tiddler titles
+	TagNav.titles = TagNav.getTiddlerTitles(TagNav.tiddlers);
+	// get tiddler tags
+	TagNav.tags = TagNav.getTiddlerTags(TagNav.tiddlers);
+	// create interface -- DEBUG: hijack tagging macro instead!?
+	var TagNavigator = createTiddlyElement(document.body, "div", "TagNavigator", null, null); // TagNavigator box
+	createTiddlyElement(TagNavigator, "h1", null, null, "Tag Navigator"); // DEBUG: for testing purposes only?!
+	var TagNavigatorTiddlers = createTiddlyElement(TagNavigator, "div", "TagNavigatorTiddlers", null, null); // root of tiddlers listing
+	TagNav.listTiddlers(TagNavigatorTiddlers, TagNav.titles);
+	var TagNavigatorTags = createTiddlyElement(TagNavigator, "div", "TagNavigatorTags", null, null); // root of tags listing
+	TagNav.listTags(TagNavigatorTags, TagNav.tags);
+	TagNav.subMenus = [];
+}
+
+// create shadow tiddler for CSS rules
+TagNav.addStyles = function(shadowTiddler) {
+	config.shadowTiddlers[shadowTiddler] = "/*{{{*/\n"
+		+ "#TagNavigator {\n"
+		+ "\tposition: absolute;\n"
+		+ "\tbottom: 10px;\n"
+		+ "\tleft: 10px;\n"
+		+ "\tmargin: 0;\n"
+		+ "\tborder: 1px solid #AAA;\n" // DEBUG: use ColorPalette instead
+		+ "\tpadding: 5px;\n"
+		+ "\tbackground-color: [[ColorPalette::TertiaryPale]];\n"
+		+ "}\n\n"
+		+ "#TagNavigator a {\n"
+		+ "\tdisplay: block;\n"
+		+ "}\n"
+		+ "/*}}}*/";
+	store.addNotification(shadowTiddler, refreshStyles);
+}
+
+// retrieve tiddlers with a specific tag from tiddlers array
+TagNav.getTaggedTiddlers = function(container, tag) {
+	var tiddlers = [];
+	for(var i = 0; i < container.length; i++) {
+		if(container[i].tags.contains(tag)) {
+			tiddlers.push(container[i]);
+		}
+	}
+	return tiddlers;
+}
+
+// retrieve titles from tiddlers array
+TagNav.getTiddlerTitles = function(container) {
+	var titles = [];
+	for(var i = 0; i < container.length; i++) {
+		titles.push(container[i].title);
+	}
+	titles.sort();
+	return titles;
+}
+
+// retrieve tags from tiddlers array
+TagNav.getTiddlerTags = function(tiddlers) {
+	var tags = [];
+	for(var i = 0; i < tiddlers.length; i++) {
+		for(var j = 0; j < tiddlers[i].tags.length; j++) {
+			tags.pushUnique(tiddlers[i].tags[j]);
+		}
+	}
+	tags.sort();
+	return tags;
+}
+
+// crete list of tiddlers as links
+TagNav.listTiddlers = function(parent, titles) {
+	var item, btn;
+	createTiddlyElement(parent, "h2", null, null, "Tiddlers"); // DEBUG: for testing purposes only?!
+	if(titles.length == 0) {
+		createTiddlyElement(parent, "span", null, null, "no matching tiddlers");
+	}
+	for(var i = 0; i < titles.length; i++) {
+		btn = createTiddlyButton(parent, titles[i], "open tiddler", TagNav.tiddlerSelection, "tiddlyLink tiddlyLinkExisting");
+		btn.setAttribute("tiddler", titles[i]);
+	}
+}
+
+// create list of tags as links -- DEBUG: revise titles and prompts
+TagNav.listTags = function(parent, tags) {
+	var item, btn;
+	createTiddlyElement(parent, "h2", null, null, "Tags"); // DEBUG: for testing purposes only?!
+	if(tags.length == 0) {
+		createTiddlyElement(parent, "li", null, null, "no matching tags");
+	}
+	for(var i = 0; i < tags.length; i++) {
+		btn = createTiddlyButton(parent, tags[i], "filter using this tag", TagNav.tagSelection);
+		btn.setAttribute("tag", tags[i]);
+	}
+}
+
+// event click on tiddler button: open tiddler and close popups
+TagNav.tiddlerSelection = function(e) {
+	var theTarget = resolveTarget(e);
+	// remove sub-menu popups
+	for(var i = 0; i < TagNav.subMenus.length; i++) {
+		Popup.removeFrom(TagNav.subMenus); // DEBUG: not working!?
+	}
+	// open tiddler
+	var title = theTarget.getAttribute("tiddler");
+	story.displayTiddler(null, title); // DEBUG: temporary workaround (see below)
+	//onClickTiddlerLink(e); // DEBUG: causes error "theLink.getAttribute is not a function"
+}
+
+// event click on tag button: add new filtering level
+TagNav.tagSelection = function(e) {
+	var theTarget = resolveTarget(e);
+	var tag = theTarget.getAttribute("tag");
+	if(tag) {
+		// update matching tiddler set
+		TagNav.tiddlers = TagNav.getTaggedTiddlers(TagNav.tiddlers, tag);
+		TagNav.titles = TagNav.getTiddlerTitles(TagNav.tiddlers);
+		TagNav.tags = TagNav.getTiddlerTags(TagNav.tiddlers);
+		// create sub-menu -- DEBUG: buggy/incomplete (e.g. how to close popups)
+		TagNav.subMenus.push(Popup.create(theTarget));
+		var TagNavigator = createTiddlyElement(theTarget, "ul", "TagNavigator", null, null);
+		TagNav.listTiddlers(TagNavigator, TagNav.titles);
+		TagNav.listTags(TagNavigator, TagNav.tags);
+		Popup.show(TagNavigator, false);
+	}
+}
+
+// initialize
+TagNav.initialize();
+
+/*
+** obsolete / DEBUGging
+*/
+
+// convert arrays into link list form
+function listArray(type, array, parent) {
+	for(var i = 0; i < array.length; i++) {
+		e = createTiddlyElement(parent, "a", null, null, array[i]);
+		if(type != "tags") {
+			e.setAttribute("tiddlylink", array[i], 1);
+			e.setAttribute("refresh", "link", 1);
+		} else {
+			e.setAttribute("tag", array[i], 1);
+			e.setAttribute("class", "button", 1);
+		}
+	}
+}
+
+// DEBUG: for temporary reference
+function onClickTag(e)
+{
+	if (!e) var e = window.event;
+	var theTarget = resolveTarget(e);
+	var popup = Popup.create(this);
+	var tag = this.getAttribute("tag");
+	var title = this.getAttribute("tiddler");
+	if(popup && tag)
+		{
+		var tagged = store.getTaggedTiddlers(tag);
+		var titles = [];
+		var li,r;
+		for(r=0;r<tagged.length;r++)
+			if(tagged[r].title != title)
+				titles.push(tagged[r].title);
+		var lingo = config.views.wikified.tag;
+		if(titles.length > 0)
+			{
+			var openAll = createTiddlyButton(createTiddlyElement(popup,"li"),lingo.openAllText.format([tag]),lingo.openAllTooltip,onClickTagOpenAll);
+			openAll.setAttribute("tag",tag);
+			createTiddlyElement(createTiddlyElement(popup,"li",null,"listBreak"),"div");
+			for(r=0; r<titles.length; r++)
+				{
+				createTiddlyLink(createTiddlyElement(popup,"li"),titles[r],true);
+				}
+			}
+		else
+			createTiddlyText(createTiddlyElement(popup,"li",null,"disabled"),lingo.popupNone.format([tag]));
+		createTiddlyElement(createTiddlyElement(popup,"li",null,"listBreak"),"div");
+		var h = createTiddlyLink(createTiddlyElement(popup,"li"),tag,false);
+		createTiddlyText(h,lingo.openTag.format([tag]));
+		}
+	Popup.show(popup,false);
+	e.cancelBubble = true;
+	if (e.stopPropagation) e.stopPropagation();
+	return(false);
+}
+
+/* DEBUG'd (prompt-based tag selection; obsolete)
+// tag selection
+function tagSelect(defaultTag) { // DEBUG: defaultTag parameter just for testing purposes
+	return prompt("TagNavigatorPlugin\nEnter tag name to filter by:", defaultTag); // DEBUG: to be replaced by actual HTML interface
+}
+
+// select initial tag to filter by
+var filterTag = tagSelect("systemConfig"); // DEBUG: parameter just for testing purposes -- DEBUG'd
+
+// start filtering process
+if(filterTag && filterTag != "")
+{
+	// select matching tiddlers
+	tiddlers = TNPgetTaggedTiddlers(tiddlers, filterTag);
+
+	// retrieve tiddler titles
+	titles = TNPgetTiddlerTitles(tiddlers);
+
+	// retrieve all tags from tiddler set
+	tags = TNPgetTiddlerTags(tiddlers);
+
+	// select tag to filter by
+	filterTag = tagSelect("plugin"); // DEBUG: parameter just for testing purposes
+}
+*/
+//}}}
