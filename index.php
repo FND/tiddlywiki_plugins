@@ -27,9 +27,9 @@ function processTiddlyWiki($str) {
 	$xml = new SimpleXMLElement($str); // DEBUG: errors for HTML entities (CDATA issue!?)
 	$version = getVersion($xml);
 	if(floatval($version[0] . "." . $version[1]) < 2.2)
-		getPluginTiddlers($xml, true);
+		processPluginTiddlers($xml, true);
 	else
-		getPluginTiddlers($xml, false);
+		processPluginTiddlers($xml, false);
 }
 
 function getVersion($xml) {
@@ -44,24 +44,58 @@ function getVersion($xml) {
 		return null;
 }
 
-function getPluginTiddlers($xml, $oldStoreFormat = false) {
+function processPluginTiddlers($xml, $oldStoreFormat = false) {
+	// DEBUG: use of strval() for SimpleXML value retrieval hacky!?
 	$filter = "//div[@id='storeArea']/div[contains(@tags, 'systemConfig')]";
-	if(!$oldStoreFormat) // v2.2+
-		$filter .= "/pre";
 	$tiddlers = $xml->xpath($filter);
-	// DEBUG: also retrieve tiddler fields (DIV attributes)
 	foreach($tiddlers as $tiddler) {
-		$t = new stdClass; // DEBUG: correct?
-		$t->text = $tiddler->asXML(); // asXML() conversion not required!?
-		processTiddler($t);
+		// initialize tiddler object -- DEBUG: correct? required?
+		$t = new stdClass;
+		$t->fields = new stdClass;
+		// retrieve tiddler fields
+		foreach($tiddler->attributes() as $field) {
+			switch($field->getName()) {
+				case "title":
+					$t->title = strval($field);
+					break;
+				case "tags":
+					$t->tags = strval($field);
+					break;
+				case "created":
+					$t->created = strval($field);
+					break;
+				case "modified":
+					$t->modified = strval($field);
+					break;
+				case "modifier":
+					$t->modifier = strval($field);
+					break;
+				default: // extended fields
+					$t->fields->{$field->getName()} = strval($field);
+					break;
+			}
+		}
+		// retrieve tiddler text
+		if(!$oldStoreFormat) // v2.2+
+			$t->text = strval($tiddler->pre);
+		else
+			$t->text = strval($tiddler);
+		// retrieve slices
+		getSlices($t);
+		// process plugin
+		processPlugin($t);
 	}
+}
+
+function getSlices(&$tiddler) {
+	// DEBUG: to do
 }
 
 /*
 ** tiddler integration
 */
 
-function processTiddler($tiddler) {
-		print_r($tiddler); // DEBUG
+function processPlugin($tiddler) {
+	print_r($tiddler); // DEBUG
 }
 ?>
