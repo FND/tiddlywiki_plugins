@@ -81,17 +81,26 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 		else
 			$t->text = strval($tiddler);
 		// retrieve slices
-		getSlices($t);
+		$t->slices = getSlices($t->text);
 		// process plugin
 		processPlugin($t);
 	}
 }
 
-function getSlices(&$tiddler) {
+function getSlices($text) {
 	$pattern = "/(?:[\'\/]*~?([\.\w]+)[\'\/]*\:[\'\/]*\s*(.*?)\s*$)|(?:\|[\'\/]*~?([\.\w]+)\:?[\'\/]*\|\s*(.*?)\s*\|)/m"; // DEBUG: not working!?
-	preg_match_all($pattern, $tiddler->text, $matches);
-	print_r($matches); // DEBUG
-	// DEBUG: to do
+	$slices = new stdClass;
+	preg_match_all($pattern, $text, $matches);
+	$m = $matches[0];
+	if($m) {
+		for($i = 0; $i < count($m); $i++) { // DEBUG: use lowercase labels?
+			if($matches[1][$i]) // colon notation
+				$slices->$matches[1][$i] = $matches[2][$i];
+			else // table notation
+				$slices->$matches[3][$i] = $matches[4][$i];
+		}
+	}
+	return $slices;
 }
 
 /*
