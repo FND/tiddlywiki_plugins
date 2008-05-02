@@ -24,7 +24,7 @@ function processRepositories() {
 
 function processTiddlyWiki($str) {
 	$str = str_replace("xmlns=", "ns=", $str); // workaround for default-namespace bug
-	$xml = new SimpleXMLElement($str); // DEBUG: errors for HTML entities (CDATA issue!?)
+	$xml = @new SimpleXMLElement($str); // DEBUG: errors for HTML entities (CDATA issue!?); suppressing errors hacky?!
 	$version = getVersion($xml);
 	if(floatval($version[0] . "." . $version[1]) < 2.2)
 		processPluginTiddlers($xml, true);
