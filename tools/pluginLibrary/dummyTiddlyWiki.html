@@ -31,9 +31,208 @@ TiddlyWiki created by Jeremy Ruston, (jeremy [at] osmosoft [dot] com)
 				Bar tiddler
 			</pre>
 		</div>
-		<div title="Baz" created="200804251606" modified="200804261114" modifier="FND" tags="systemConfig systemConfigDisable" customField="baz">
+		<div title="CryptoFunctionsPlugin" created="200710131134" tags="systemConfig excludeLists excludeSearch">
 			<pre>
-				Baz tiddler
+/***
+|''Name:''|CryptoFunctionsPlugin|
+|''Description:''|Support for cryptographic functions|
+***/
+//{{{
+if(!version.extensions.CryptoFunctionsPlugin) {
+version.extensions.CryptoFunctionsPlugin = {installed:true};
+
+//--
+//-- Crypto functions and associated conversion routines
+//--
+
+// Crypto &quot;namespace&quot;
+function Crypto() {}
+
+// Convert a string to an array of big-endian 32-bit words
+Crypto.strToBe32s = function(str)
+{
+	var be = Array();
+	var len = Math.floor(str.length/4);
+	var i, j;
+	for(i=0, j=0; i&lt;len; i++, j+=4) {
+		be[i] = ((str.charCodeAt(j)&amp;0xff) &lt;&lt; 24)|((str.charCodeAt(j+1)&amp;0xff) &lt;&lt; 16)|((str.charCodeAt(j+2)&amp;0xff) &lt;&lt; 8)|(str.charCodeAt(j+3)&amp;0xff);
+	}
+	while (j&lt;str.length) {
+		be[j&gt;&gt;2] |= (str.charCodeAt(j)&amp;0xff)&lt;&lt;(24-(j*8)%32);
+		j++;
+	}
+	return be;
+};
+
+// Convert an array of big-endian 32-bit words to a string
+Crypto.be32sToStr = function(be)
+{
+	var str = &quot;&quot;;
+	for(var i=0;i&lt;be.length*32;i+=8)
+		str += String.fromCharCode((be[i&gt;&gt;5]&gt;&gt;&gt;(24-i%32)) &amp; 0xff);
+	return str;
+};
+
+// Convert an array of big-endian 32-bit words to a hex string
+Crypto.be32sToHex = function(be)
+{
+	var hex = &quot;0123456789ABCDEF&quot;;
+	var str = &quot;&quot;;
+	for(var i=0;i&lt;be.length*4;i++)
+		str += hex.charAt((be[i&gt;&gt;2]&gt;&gt;((3-i%4)*8+4))&amp;0xF) + hex.charAt((be[i&gt;&gt;2]&gt;&gt;((3-i%4)*8))&amp;0xF);
+	return str;
+};
+
+// Return, in hex, the SHA-1 hash of a string
+Crypto.hexSha1Str = function(str)
+{
+	return Crypto.be32sToHex(Crypto.sha1Str(str));
+};
+
+// Return the SHA-1 hash of a string
+Crypto.sha1Str = function(str)
+{
+	return Crypto.sha1(Crypto.strToBe32s(str),str.length);
+};
+
+// Calculate the SHA-1 hash of an array of blen bytes of big-endian 32-bit words
+Crypto.sha1 = function(x,blen)
+{
+	// Add 32-bit integers, wrapping at 32 bits
+	add32 = function(a,b)
+	{
+		var lsw = (a&amp;0xFFFF)+(b&amp;0xFFFF);
+		var msw = (a&gt;&gt;16)+(b&gt;&gt;16)+(lsw&gt;&gt;16);
+		return (msw&lt;&lt;16)|(lsw&amp;0xFFFF);
+	};
+	// Add five 32-bit integers, wrapping at 32 bits
+	add32x5 = function(a,b,c,d,e)
+	{
+		var lsw = (a&amp;0xFFFF)+(b&amp;0xFFFF)+(c&amp;0xFFFF)+(d&amp;0xFFFF)+(e&amp;0xFFFF);
+		var msw = (a&gt;&gt;16)+(b&gt;&gt;16)+(c&gt;&gt;16)+(d&gt;&gt;16)+(e&gt;&gt;16)+(lsw&gt;&gt;16);
+		return (msw&lt;&lt;16)|(lsw&amp;0xFFFF);
+	};
+	// Bitwise rotate left a 32-bit integer by 1 bit
+	rol32 = function(n)
+	{
+		return (n&gt;&gt;&gt;31)|(n&lt;&lt;1);
+	};
+
+	var len = blen*8;
+	// Append padding so length in bits is 448 mod 512
+	x[len&gt;&gt;5] |= 0x80 &lt;&lt; (24-len%32);
+	// Append length
+	x[((len+64&gt;&gt;9)&lt;&lt;4)+15] = len;
+	var w = Array(80);
+
+	var k1 = 0x5A827999;
+	var k2 = 0x6ED9EBA1;
+	var k3 = 0x8F1BBCDC;
+	var k4 = 0xCA62C1D6;
+
+	var h0 = 0x67452301;
+	var h1 = 0xEFCDAB89;
+	var h2 = 0x98BADCFE;
+	var h3 = 0x10325476;
+	var h4 = 0xC3D2E1F0;
+
+	for(var i=0;i&lt;x.length;i+=16) {
+		var j,t;
+		var a = h0;
+		var b = h1;
+		var c = h2;
+		var d = h3;
+		var e = h4;
+		for(j = 0;j&lt;16;j++) {
+			w[j] = x[i+j];
+			t = add32x5(e,(a&gt;&gt;&gt;27)|(a&lt;&lt;5),d^(b&amp;(c^d)),w[j],k1);
+			e=d; d=c; c=(b&gt;&gt;&gt;2)|(b&lt;&lt;30); b=a; a = t;
+		}
+		for(j=16;j&lt;20;j++) {
+			w[j] = rol32(w[j-3]^w[j-8]^w[j-14]^w[j-16]);
+			t = add32x5(e,(a&gt;&gt;&gt;27)|(a&lt;&lt;5),d^(b&amp;(c^d)),w[j],k1);
+			e=d; d=c; c=(b&gt;&gt;&gt;2)|(b&lt;&lt;30); b=a; a = t;
+		}
+		for(j=20;j&lt;40;j++) {
+			w[j] = rol32(w[j-3]^w[j-8]^w[j-14]^w[j-16]);
+			t = add32x5(e,(a&gt;&gt;&gt;27)|(a&lt;&lt;5),b^c^d,w[j],k2);
+			e=d; d=c; c=(b&gt;&gt;&gt;2)|(b&lt;&lt;30); b=a; a = t;
+		}
+		for(j=40;j&lt;60;j++) {
+			w[j] = rol32(w[j-3]^w[j-8]^w[j-14]^w[j-16]);
+			t = add32x5(e,(a&gt;&gt;&gt;27)|(a&lt;&lt;5),(b&amp;c)|(d&amp;(b|c)),w[j],k3);
+			e=d; d=c; c=(b&gt;&gt;&gt;2)|(b&lt;&lt;30); b=a; a = t;
+		}
+		for(j=60;j&lt;80;j++) {
+			w[j] = rol32(w[j-3]^w[j-8]^w[j-14]^w[j-16]);
+			t = add32x5(e,(a&gt;&gt;&gt;27)|(a&lt;&lt;5),b^c^d,w[j],k4);
+			e=d; d=c; c=(b&gt;&gt;&gt;2)|(b&lt;&lt;30); b=a; a = t;
+		}
+
+		h0 = add32(h0,a);
+		h1 = add32(h1,b);
+		h2 = add32(h2,c);
+		h3 = add32(h3,d);
+		h4 = add32(h4,e);
+	}
+	return Array(h0,h1,h2,h3,h4);
+};
+
+
+}
+//}}}
+			</pre>
+		</div>
+		<div title="SampleMacro" created="200804251606" modified="200804261114" modifier="FND" tags="systemConfig systemConfigDisable" customField="baz">
+			<pre>
+/***
+|''Name''|SampleMacro|
+|''Description''|&lt;...&gt;|
+|''Author''|&lt;...&gt;|
+|''Contributors''|&lt;...&gt;|
+|''Version''|&lt;...&gt;|
+|''Date''|&lt;...&gt;|
+|''Status''|&lt;//unknown//; @@experimental@@; @@beta@@; //obsolete//; stable&gt;|
+|''Source''|&lt;...&gt;|
+|''CodeRepository''|&lt;...&gt;|
+|''Copyright''|&lt;...&gt;|
+|''License''|&lt;...&gt;|
+|''CoreVersion''|&lt;...&gt;|
+|''Requires''|&lt;...&gt;|
+|''Overrides''|&lt;...&gt;|
+|''Feedback''|&lt;...&gt;|
+|''Documentation''|&lt;...&gt;|
+|''Keywords''|&lt;...&gt;|
+!Description
+
+&lt;...&gt;
+!Notes
+&lt;...&gt;
+!Usage
+{{{
+&lt;&lt;sampleMacro&gt;&gt;
+}}}
+!!Parameters
+&lt;...&gt;
+!!Examples
+&lt;&lt;sampleMacro&gt;&gt;
+!Configuration Options
+&lt;...&gt;
+
+!Revision History
+!!v&lt;#.#&gt; (&lt;yyyy-mm-dd&gt;)
+* &lt;...&gt;
+!To Do
+&lt;...&gt;
+!Code
+***/
+//{{{
+config.macros.sampleMacro = {};
+
+config.macros.sampleMacro.handler = function(place, macroName, params, wikifier, paramString, tiddler) {
+	// ...
+}
+//}}}
 			</pre>
 		</div>
 	</div>
