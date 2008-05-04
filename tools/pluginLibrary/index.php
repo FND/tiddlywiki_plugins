@@ -1,8 +1,8 @@
 <?php
 
-echo "<pre>";
+echo "<pre>"; // DEBUG
 processRepositories();
-echo "</pre>";
+echo "</pre>"; // DEBUG
 
 /*
 ** repository handling
