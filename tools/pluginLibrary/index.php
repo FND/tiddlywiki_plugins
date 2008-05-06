@@ -1,21 +1,58 @@
 <?php
 
+// initialize debugging variables
+$t0 = time();
+$log = array();
+
+// start processing
 echo "<pre>"; // DEBUG
 processRepositories();
 echo "</pre>"; // DEBUG
+
+// output debugging info
+$t1 = time();
+echo "Runtime: " . ($t1 - $t0) . " seconds\n"; // DEBUG
+print_r($log);
+
 
 /*
 ** repository handling
 */
 
 function processRepositories() {
-	$repositories = array("dummyTiddlyWiki.html"/*, "http://www.tiddlywiki.com/coreplugins.html"*/); // DEBUG: to be read from database
+	$repositories = getRepositories();
 	foreach($repositories as $repo) {
-		$contents = file_get_contents($repo);
-		// DEBUG: error handling
-		// DEBUG: check type (TiddlyWiki vs. directory vs. file) 
-		processTiddlyWiki($contents);
+		$contents = file_get_contents($repo->url); // DEBUG: missing error handling?
+		if($repo->type == "TiddlyWiki") // TidldyWiki document
+			processTiddlyWiki($contents);
+		elseif($repo->type == "SVN") // Subversion directory
+			echo $repo->type . "\n"; // DEBUG: to be implemented
+		elseif($repo->type == "file") // JavaScript file
+			echo $repo->type . "\n"; // DEBUG: to be implemented
+		else
+			addLog("ERROR: failed to process repository " . $repo->url); // DEBUG: error report
 	}
+}
+
+function getRepositories() {
+	$repositories = array();
+	// DEBUG: to be read from database
+	$repositories[0] = new stdClass;
+	$repositories[0]->url = "dummyTiddlyWiki.html";
+	$repositories[0]->type = "TiddlyWiki";
+	$repositories[1] = new stdClass;
+	$repositories[1]->url = "http://www.tiddlywiki.com/coreplugins.html";
+	$repositories[1]->type = "TiddlyWiki";
+	$repositories[2] = new stdClass;
+	$repositories[2]->url = "http://svn.tiddlywiki.org/Trunk/contributors/FND/plugins/";
+	$repositories[2]->type = "SVN";
+	$repositories[3] = new stdClass;
+	$repositories[3]->url = "http://fnd.lewcid.org/svn/TiddlyWiki/plugins/";
+	$repositories[3]->type = "SVN";
+	$repositories[4] = new stdClass;
+	$repositories[4]->url = "http://svn.tiddlywiki.org/Trunk/contributors/FND/plugins/EvalMacro.js";
+	$repositories[4]->type = "file";
+	return $repositories;
 }
 
 /*
@@ -108,6 +145,17 @@ function getSlices($text) {
 */
 
 function processPlugin($tiddler) {
-	print_r($tiddler); // DEBUG
+	//print_r($tiddler); // DEBUG
 }
+
+/*
+** debugging
+*/
+
+function addLog($text) {
+	global $log;
+	$timestamp = date("Y-m-d H:i:s");
+	array_push($log, $timestamp . " " . $text);
+}
+
 ?>
