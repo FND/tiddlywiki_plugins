@@ -84,6 +84,20 @@ lorem ipsum dolor sit amet',
 );
 EOT;
 
+$query_update = <<<EOT
+UPDATE `pluginLibrary`.`plugins` SET
+	`name` = 'Foo',
+	`available` = '0',
+	`title` = 'foo',
+	`text` = 'foo',
+	`created` = '2008-05-11',
+	`modified` = '2008-05-11',
+	`modifier` = 'bar',
+	`updated` = '2008-05-11',
+	`documentation` = 'foo'
+	WHERE `plugins`.`ID` = 4 LIMIT 1 ;
+EOT;
+
 $sql = new dbq();
 $sql->connectToDB();
 $out = $sql->insertDB($query);
