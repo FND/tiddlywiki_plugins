@@ -17,13 +17,77 @@ class dbq {
 		$results = mysql_query($query)
 			or die("SQL Error: " . $query . " " . mysql_error());
 		$rows = array();
-		while($row = mysql_fetch_array($results, MYSQL_ASSOC)) {
-			array_push($rows, $row);		
+		while($row = mysql_fetch_array($results, MYSQL_ASSOC)) { // DEBUG: use fetch_object instead
+			array_push($rows, $row);
 		}
+		return $rows;
+	}
 
-		return $rows;		
+	function insertDB($query) {
+		$result = mysql_query($query)
+			or die("SQL Error: " . $query . " " . mysql_error());
+		return $result;
+	}
+
+	function updateFieldValue($table, $field, $value, $selector, $match) { // DEBUG: unused
+		$result = mysql_query("UPDATE `$table` SET `$field` = '$value' WHERE `$selector` = $match")
+			or die("SQL Error: " . mysql_error());
+		return $result;
 	}
 }
+
+?>
+
+<?php
+
+$sql = new dbq();
+$sql->connectToDB();
+$out = $sql->updateFieldValue("plugins", "modifier", "foo", "ID", "4");
+print_r($out); // DEBUG
+
+?>
+
+<?php
+
+$query = <<<EOT
+INSERT INTO `pluginLibrary`.`plugins` (
+	`ID` ,
+	`name` ,
+	`repository_ID` ,
+	`available` ,
+	`title` ,
+	`text` ,
+	`created` ,
+	`modified` ,
+	`modifier` ,
+	`updated` ,
+	`documentation` ,
+	`views` ,
+	`annotation`
+)
+VALUES (
+	NULL ,
+	'SamplePlugin',
+	'1',
+	'1',
+	'SamplePlugin',
+	'|''''Name:''''|SamplePlugin|
+foo bar baz
+lorem ipsum dolor sit amet',
+	'2008-05-10',
+	'2008-05-10',
+	'FND',
+	'2008-05-10',
+	'lorem ipsum dolor sit amet',
+	'0',
+	NULL
+);
+EOT;
+
+$sql = new dbq();
+$sql->connectToDB();
+$out = $sql->insertDB($query);
+print_r($out); // DEBUG
 
 ?>
 

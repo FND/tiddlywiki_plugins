@@ -41,7 +41,6 @@ function getRepositories() {
 	$sql = new dbq();
 	$sql->connectToDB();
 	$repositories = $sql->queryDB("SELECT * FROM `repositories`");
-	print_r($out); // DEBUG
 	return $repositories;
 }
 
