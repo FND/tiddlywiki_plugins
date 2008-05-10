@@ -1,5 +1,7 @@
 <?php
 
+include "dbq.php";
+
 // initialize debugging variables
 $t0 = time();
 $log = array();
@@ -35,23 +37,10 @@ function processRepositories() {
 }
 
 function getRepositories() {
-	$repositories = array();
-	// DEBUG: to be read from database
-	$repositories[0] = new stdClass;
-	$repositories[0]->url = "dummyTiddlyWiki.html";
-	$repositories[0]->type = "TiddlyWiki";
-	$repositories[1] = new stdClass;
-	$repositories[1]->url = "http://www.tiddlywiki.com/coreplugins.html";
-	$repositories[1]->type = "TiddlyWiki";
-	$repositories[2] = new stdClass;
-	$repositories[2]->url = "http://svn.tiddlywiki.org/Trunk/contributors/FND/plugins/";
-	$repositories[2]->type = "SVN";
-	$repositories[3] = new stdClass;
-	$repositories[3]->url = "http://fnd.lewcid.org/svn/TiddlyWiki/plugins/";
-	$repositories[3]->type = "SVN";
-	$repositories[4] = new stdClass;
-	$repositories[4]->url = "http://svn.tiddlywiki.org/Trunk/contributors/FND/plugins/EvalMacro.js";
-	$repositories[4]->type = "file";
+	$sql = new dbq();
+	$sql->connectToDB();
+	$repositories = $sql->queryDB("SELECT * FROM `repositories`");
+	print_r($out); // DEBUG
 	return $repositories;
 }
 
