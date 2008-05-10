@@ -125,7 +125,7 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 }
 
 function getSlices($text) {
-	$pattern = "/(?:[\'\/]*~?([\.\w]+)[\'\/]*\:[\'\/]*\s*(.*?)\s*$)|(?:\|[\'\/]*~?([\.\w]+)\:?[\'\/]*\|\s*(.*?)\s*\|)/m"; // DEBUG: not working!?
+	$pattern = "/(?:[\'\/]*~?([\.\w]+)[\'\/]*\:[\'\/]*\s*(.*?)\s*$)|(?:\|[\'\/]*~?([\.\w]+)\:?[\'\/]*\|\s*(.*?)\s*\|)/m"; // RegEx origin: TiddlyWiki core
 	$slices = new stdClass;
 	preg_match_all($pattern, $text, $matches);
 	$m = $matches[0];
@@ -145,7 +145,7 @@ function getSlices($text) {
 */
 
 function processPlugin($tiddler) {
-	//print_r($tiddler); // DEBUG
+	print_r($tiddler); // DEBUG
 }
 
 /*
