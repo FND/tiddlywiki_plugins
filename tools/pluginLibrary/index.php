@@ -23,14 +23,15 @@ print_r($log);
 
 function processRepositories() {
 	$repositories = getRepositories();
+	print_r($repositories);
 	foreach($repositories as $repo) {
-		$contents = file_get_contents($repo->url); // DEBUG: missing error handling?
-		if($repo->type == "TiddlyWiki") // TidldyWiki document
+		$contents = file_get_contents($repo["URI"]); // DEBUG: missing error handling?
+		if($repo["type"] == "TiddlyWiki") // TidldyWiki document
 			processTiddlyWiki($contents);
-		elseif($repo->type == "SVN") // Subversion directory
-			echo $repo->type . "\n"; // DEBUG: to be implemented
-		elseif($repo->type == "file") // JavaScript file
-			echo $repo->type . "\n"; // DEBUG: to be implemented
+		elseif($repo["type"] == "SVN") // Subversion directory
+			echo $repo["type"] . "\n"; // DEBUG: to be implemented
+		elseif($repo["type"] == "file") // JavaScript file
+			echo $repo["type"] . "\n"; // DEBUG: to be implemented
 		else
 			addLog("ERROR: failed to process repository " . $repo->url); // DEBUG: error report
 	}
