@@ -27,6 +27,7 @@ class dbq {
 
 ?>
 
+<!--
 <?php
 
 echo "<pre>"; // DEBUG
@@ -37,3 +38,4 @@ print_r($out);
 echo "</pre>"; // DEBUG
 
 ?>
+-->
