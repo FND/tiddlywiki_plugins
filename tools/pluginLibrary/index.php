@@ -27,7 +27,11 @@ function processRepositories() {
 	//print_r($repositories); // DEBUG
 	foreach($repositories as $repo) {
 		$contents = file_get_contents($repo["URI"]); // DEBUG: missing error handling?
-		$currentRepository = $repo["URI"];
+		// set current repository
+		$currentRepository = new stdClass;
+		$currentRepository->URI = $repo["URI"];
+		$currentRepository->ID = $repo["ID"];
+		// document type handling
 		if($repo["type"] == "TiddlyWiki") // TidldyWiki document
 			processTiddlyWiki($contents);
 		elseif($repo["type"] == "SVN") // Subversion directory
@@ -36,7 +40,7 @@ function processRepositories() {
 			echo $repo["type"] . "\n"; // DEBUG: to be implemented
 		else
 			addLog("ERROR: failed to process repository " . $repo->url); // DEBUG: error report
-		$currentRepository = null;
+		$currentRepository = null; // DEBUG: obsolete?
 	}
 }
 
@@ -83,6 +87,8 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 		// initialize tiddler object -- DEBUG: correct? required?
 		$t = new stdClass;
 		$t->fields = new stdClass;
+		// set repository
+		$t->repository = $currentRepository->URI;
 		// retrieve tiddler fields
 		foreach($tiddler->attributes() as $field) {
 			switch($field->getName()) {
@@ -115,7 +121,7 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 		$t->slices = getSlices($t->text);
 
 		$source = $t->slices->Source; // DEBUG: lowercase label?
-		if(!$source || $source && !(strpos($source, $currentRepository) === false)) { /// DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
+		if(!$source || $source && !(strpos($source, $currentRepository->URI) === false)) { /// DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
 			echo "storing " . $t->title . "\n\n"; // DEBUG
 			// process plugin
 			storePlugin($t);
