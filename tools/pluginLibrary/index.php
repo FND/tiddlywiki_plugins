@@ -22,10 +22,12 @@ print_r($log);
 */
 
 function processRepositories() {
+	global $currentRepository;
 	$repositories = getRepositories();
-	print_r($repositories);
+	//print_r($repositories); // DEBUG
 	foreach($repositories as $repo) {
 		$contents = file_get_contents($repo["URI"]); // DEBUG: missing error handling?
+		$currentRepository = $repo["URI"];
 		if($repo["type"] == "TiddlyWiki") // TidldyWiki document
 			processTiddlyWiki($contents);
 		elseif($repo["type"] == "SVN") // Subversion directory
@@ -34,6 +36,7 @@ function processRepositories() {
 			echo $repo["type"] . "\n"; // DEBUG: to be implemented
 		else
 			addLog("ERROR: failed to process repository " . $repo->url); // DEBUG: error report
+		$currentRepository = null;
 	}
 }
 
@@ -71,6 +74,7 @@ function getVersion($xml) {
 }
 
 function processPluginTiddlers($xml, $oldStoreFormat = false) {
+	global $currentRepository;
 	// DEBUG: use of strval() for SimpleXML value retrieval hacky!?
 	$filter = "//div[@id='storeArea']/div[contains(@tags, 'systemConfig')]";
 	$tiddlers = $xml->xpath($filter);
@@ -108,8 +112,13 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 			$t->text = strval($tiddler);
 		// retrieve slices
 		$t->slices = getSlices($t->text);
-		// process plugin
-		processPlugin($t);
+
+		$source = $t->slices->Source; // DEBUG: lowercase label?
+		if(!$source || $source && !(strpos($source, $currentRepository) === false)) { /// DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
+			echo "success for " . $t->title . "\n"; // DEBUG
+			// process plugin
+			storePlugin($t);
+		}
 	}
 }
 
@@ -133,8 +142,8 @@ function getSlices($text) {
 ** tiddler integration
 */
 
-function processPlugin($tiddler) {
-	print_r($tiddler); // DEBUG
+function storePlugin($tiddler) {
+	//print_r($tiddler); // DEBUG
 }
 
 /*
