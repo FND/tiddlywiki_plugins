@@ -44,6 +44,7 @@ function getRepositories() {
 	$sql = new dbq();
 	$sql->connectToDB();
 	$repositories = $sql->queryDB("SELECT * FROM `repositories`");
+	print_r($repositories);
 	return $repositories;
 }
 
@@ -106,16 +107,16 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 			}
 		}
 		// retrieve tiddler text -- DEBUG: strip leading and trailing whitespace?
-		if(!$oldStoreFormat) // v2.2+
+		/*if(!$oldStoreFormat) // v2.2+
 			$t->text = strval($tiddler->pre);
 		else
-			$t->text = strval($tiddler);
+			$t->text = strval($tiddler);*/ // DEBUG'd
 		// retrieve slices
 		$t->slices = getSlices($t->text);
 
 		$source = $t->slices->Source; // DEBUG: lowercase label?
 		if(!$source || $source && !(strpos($source, $currentRepository) === false)) { /// DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
-			echo "success for " . $t->title . "\n"; // DEBUG
+			echo "storing " . $t->title . "\n\n"; // DEBUG
 			// process plugin
 			storePlugin($t);
 		}
@@ -143,7 +144,7 @@ function getSlices($text) {
 */
 
 function storePlugin($tiddler) {
-	//print_r($tiddler); // DEBUG
+	print_r($tiddler); // DEBUG
 }
 
 /*
