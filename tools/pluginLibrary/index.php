@@ -1,6 +1,6 @@
 <?php
 
-include "dbq.php";
+require "dbq.php";
 
 // initialize debugging variables
 $t0 = time();
@@ -39,7 +39,7 @@ function processRepositories() {
 		elseif($repo["type"] == "file") // JavaScript file
 			echo $repo["type"] . "\n"; // DEBUG: to be implemented
 		else
-			addLog("ERROR: failed to process repository " . $repo->url); // DEBUG: error report
+			addLog("ERROR: failed to process repository " . $repo->url);
 		$currentRepository = null; // DEBUG: obsolete?
 	}
 }
@@ -47,8 +47,8 @@ function processRepositories() {
 function getRepositories() {
 	$sql = new dbq();
 	$sql->connectToDB();
-	$repositories = $sql->queryDB("SELECT * FROM `repositories`");
-	print_r($repositories);
+	$repositories = $sql->queryDB("SELECT * FROM repositories");
+	//print_r($repositories); // DEBUG
 	return $repositories;
 }
 
@@ -119,13 +119,11 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 			$t->text = strval($tiddler);*/ // DEBUG'd
 		// retrieve slices
 		$t->slices = getSlices($t->text);
-
-		$source = $t->slices->Source; // DEBUG: lowercase label?
-		if(!$source || $source && !(strpos($source, $currentRepository->URI) === false)) { /// DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
-			echo "storing " . $t->title . "\n\n"; // DEBUG
-			// process plugin
+		if(isset($t->slices->name))
+			$t->title = $t->slices->name;
+		$source = $t->slices->source;
+		if(!$source || $source && !(strpos($source, $currentRepository->URI) === false)) // DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
 			storePlugin($t);
-		}
 	}
 }
 
@@ -135,11 +133,11 @@ function getSlices($text) {
 	preg_match_all($pattern, $text, $matches);
 	$m = $matches[0];
 	if($m) {
-		for($i = 0; $i < count($m); $i++) { // DEBUG: use lowercase labels?
+		for($i = 0; $i < count($m); $i++) {
 			if($matches[1][$i]) // colon notation
-				$slices->$matches[1][$i] = $matches[2][$i];
+				$slices->{strtolower($matches[1][$i])} = $matches[2][$i];
 			else // table notation
-				$slices->$matches[3][$i] = $matches[4][$i];
+				$slices->{strtolower($matches[3][$i])} = $matches[4][$i];
 		}
 	}
 	return $slices;
@@ -150,7 +148,20 @@ function getSlices($text) {
 */
 
 function storePlugin($tiddler) {
-	print_r($tiddler); // DEBUG
+	global $currentRepository;
+	if(pluginExists($currentRepository->ID, $tiddler->title))
+		print_r($tiddler); // DEBUG
+	else
+		addLog("skipped tiddler " . $tiddler->title . " in repository " . $currentRepository);
+}
+
+function pluginExists($repoID, $pluginName) {
+	$sql = new dbq();
+	$sql->connectToDB();
+	echo $repoID . "\n" . $pluginName . "\n\n";
+	$results = $sql->queryDB("SELECT * FROM plugins
+		WHERE repository_ID = '$repoID' AND title = '$pluginName'");
+	return sizeof($results) > 0;
 }
 
 /*

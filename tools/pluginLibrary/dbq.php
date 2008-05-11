@@ -17,9 +17,8 @@ class dbq {
 		$results = mysql_query($query)
 			or die("SQL Error: " . $query . " " . mysql_error());
 		$rows = array();
-		while($row = mysql_fetch_array($results, MYSQL_ASSOC)) { // DEBUG: use fetch_object instead
+		while($row = mysql_fetch_array($results, MYSQL_ASSOC)) // DEBUG: use fetch_object instead
 			array_push($rows, $row);
-		}
 		return $rows;
 	}
 
@@ -30,7 +29,7 @@ class dbq {
 	}
 
 	function updateFieldValue($table, $field, $value, $selector, $match) { // DEBUG: unused
-		$result = mysql_query("UPDATE `$table` SET `$field` = '$value' WHERE `$selector` = $match")
+		$result = mysql_query("UPDATE $table SET $field = '$value' WHERE $selector = $match")
 			or die("SQL Error: " . mysql_error());
 		return $result;
 	}
