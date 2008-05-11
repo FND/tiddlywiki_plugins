@@ -11,7 +11,6 @@ CREATE TABLE pluginLibrary.repositories (
 	PRIMARY KEY ( ID )
 ) ENGINE = MYISAM;
 
-
 CREATE TABLE pluginLibrary.plugins (
 	ID INT NOT NULL AUTO_INCREMENT ,
 	repository_ID INT NOT NULL ,

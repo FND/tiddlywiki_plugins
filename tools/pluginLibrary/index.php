@@ -125,7 +125,7 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 		if(!$source || $source && !(strpos($source, $currentRepository->URI) === false)) // DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
 			storePlugin($t);
 		else
-			addLog("skipped tiddler " . $tiddler->title . " in repository " . $currentRepository);
+			addLog("skipped tiddler " . $t->title . " in repository #" . $currentRepository->ID);
 	}
 }
 
@@ -151,15 +151,16 @@ function getSlices($text) {
 
 function storePlugin($tiddler) {
 	global $currentRepository;
-	if(pluginExists($currentRepository->ID, $tiddler->title))
-		addPlugin($tiddler);
+	$pluginID = pluginExists($currentRepository->ID, $tiddler->title);
+	if($pluginID)
+		updatePlugin($tiddler, $pluginID);
 	else
-		updatePlugin($tiddler);
+		addPlugin($tiddler);
 }
 
 function addPlugin($tiddler) {
 	global $currentRepository;
-	echo "adding plugin " . $tiddler->title; // DEBUG
+	echo "adding plugin " . $tiddler->title . "\n"; // DEBUG
 	$query = "INSERT INTO pluginLibrary.plugins ("
 		. "ID,"
 		. "repository_ID,"
@@ -176,15 +177,15 @@ function addPlugin($tiddler) {
 		. ") "
 		. "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')";
 	$query = sprintf($query,
-		"NULL",
+		"NULL", // auto-increment
 		$currentRepository->ID,
 		1,
 		$tiddler->title,
 		$tiddler->text,
-		$tiddler->created,
+		$tiddler->created, // DEBUG: date format conversion
 		$tiddler->modified, // DEBUG: date format conversion
-		$tiddler->modifier, // DEBUG: date format conversion
-		"updated", // DEBUG: to do
+		$tiddler->modifier,
+		date("Y-m-d H:i:s"), // DEBUG: to do
 		$tiddler->documentation, // DEBUG: to do
 		0,
 		"NULL"
@@ -197,9 +198,38 @@ function addPlugin($tiddler) {
 	echo "\n\n\n\n"; // DEBUG
 }
 
-function updatePlugin($tiddler) {
+function updatePlugin($tiddler, $pluginID) {
 	global $currentRepository;
 	echo "updating plugin " . $tiddler->title; // DEBUG
+	$query = "UPDATE pluginLibrary.plugins SET "
+		. "repository_ID = '%s',"
+		. "available = '%s',"
+		. "title = '%s',"
+		. "text = '%s',"
+		. "created = '%s',"
+		. "modified = '%s',"
+		. "modifier = '%s',"
+		. "updated = '%s',"
+		. "documentation = '%s'"
+		. "WHERE plugins.ID = '%s' LIMIT 1";
+	$query = sprintf($query,
+		$currentRepository->ID,
+		1,
+		$tiddler->title,
+		$tiddler->text,
+		$tiddler->created, // DEBUG: date format conversion
+		$tiddler->modified, // DEBUG: date format conversion
+		$tiddler->modifier,
+		date("Y-m-d H:i:s"), // DEBUG: to do
+		$tiddler->documentation, // DEBUG: to do
+		$pluginID
+	);
+	$sql = new dbq();
+	$sql->connectToDB();
+	$out = $sql->insertDB($query);
+	echo "\n\n\n\n"; // DEBUG
+	print_r($out); // DEBUG
+	echo "\n\n\n\n"; // DEBUG
 }
 
 function pluginExists($repoID, $pluginName) {
@@ -208,7 +238,10 @@ function pluginExists($repoID, $pluginName) {
 	echo $repoID . "\n" . $pluginName . "\n\n";
 	$results = $sql->queryDB("SELECT * FROM plugins
 		WHERE repository_ID = '$repoID' AND title = '$pluginName'");
-	return sizeof($results) > 0;
+	if(sizeof($results) > 0)
+		return $results[0]["ID"];
+	else
+		return false;
 }
 
 /*
