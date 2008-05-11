@@ -14,7 +14,7 @@ echo "</pre>"; // DEBUG
 // output debugging info
 $t1 = time();
 echo "Runtime: " . ($t1 - $t0) . " seconds\n"; // DEBUG
-print_r($log);
+print_r($log); // DEBUG
 
 
 /*
@@ -113,10 +113,10 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 			}
 		}
 		// retrieve tiddler text -- DEBUG: strip leading and trailing whitespace?
-		/*if(!$oldStoreFormat) // v2.2+
+		if(!$oldStoreFormat) // v2.2+
 			$t->text = strval($tiddler->pre);
 		else
-			$t->text = strval($tiddler);*/ // DEBUG'd
+			$t->text = strval($tiddler);
 		// retrieve slices
 		$t->slices = getSlices($t->text);
 		if(isset($t->slices->name))
@@ -152,9 +152,54 @@ function getSlices($text) {
 function storePlugin($tiddler) {
 	global $currentRepository;
 	if(pluginExists($currentRepository->ID, $tiddler->title))
-		echo "updating plugin " . $tiddler->title; // DEBUG
+		addPlugin($tiddler);
 	else
-		echo "adding plugin " . $tiddler->title;
+		updatePlugin($tiddler);
+}
+
+function addPlugin($tiddler) {
+	global $currentRepository;
+	echo "adding plugin " . $tiddler->title; // DEBUG
+	$query = "INSERT INTO pluginLibrary.plugins ("
+		. "ID,"
+		. "repository_ID,"
+		. "available,"
+		. "title,"
+		. "text,"
+		. "created,"
+		. "modified,"
+		. "modifier,"
+		. "updated,"
+		. "documentation,"
+		. "views,"
+		. "annotation"
+		. ") "
+		. "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')";
+	$query = sprintf($query,
+		"NULL",
+		$currentRepository->ID,
+		1,
+		$tiddler->title,
+		$tiddler->text,
+		$tiddler->created,
+		$tiddler->modified, // DEBUG: date format conversion
+		$tiddler->modifier, // DEBUG: date format conversion
+		"updated", // DEBUG: to do
+		$tiddler->documentation, // DEBUG: to do
+		0,
+		"NULL"
+	);
+	$sql = new dbq();
+	$sql->connectToDB();
+	$out = $sql->insertDB($query);
+	echo "\n\n\n\n"; // DEBUG
+	print_r($out); // DEBUG
+	echo "\n\n\n\n"; // DEBUG
+}
+
+function updatePlugin($tiddler) {
+	global $currentRepository;
+	echo "updating plugin " . $tiddler->title; // DEBUG
 }
 
 function pluginExists($repoID, $pluginName) {
