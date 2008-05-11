@@ -124,6 +124,8 @@ function processPluginTiddlers($xml, $oldStoreFormat = false) {
 		$source = $t->slices->source;
 		if(!$source || $source && !(strpos($source, $currentRepository->URI) === false)) // DEBUG: www handling (e.g. http://foo.bar = http://www.foo.bar)
 			storePlugin($t);
+		else
+			addLog("skipped tiddler " . $tiddler->title . " in repository " . $currentRepository);
 	}
 }
 
@@ -150,9 +152,9 @@ function getSlices($text) {
 function storePlugin($tiddler) {
 	global $currentRepository;
 	if(pluginExists($currentRepository->ID, $tiddler->title))
-		print_r($tiddler); // DEBUG
+		echo "updating plugin " . $tiddler->title; // DEBUG
 	else
-		addLog("skipped tiddler " . $tiddler->title . " in repository " . $currentRepository);
+		echo "adding plugin " . $tiddler->title;
 }
 
 function pluginExists($repoID, $pluginName) {
