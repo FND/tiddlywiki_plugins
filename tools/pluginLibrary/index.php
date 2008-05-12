@@ -26,6 +26,7 @@ function processRepositories() {
 	$repositories = getRepositories();
 	//print_r($repositories); // DEBUG
 	foreach($repositories as $repo) {
+		// DEBUG: set all of this repo's plugins availability to false
 		$contents = file_get_contents($repo["URI"]); // DEBUG: missing error handling?
 		// set current repository
 		$currentRepository = new stdClass;
